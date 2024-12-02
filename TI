@@ -1,92 +1,96 @@
-import requests
-import numpy as np
-import pandas as pd
-import time
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
-from telegram import Bot
-from concurrent.futures import ThreadPoolExecutor
-import yfinance as yf
+from telegram import Update
+from telegram.ext import Updater, CommandHandler, CallbackContext
 
-# Initialisation des paramètres Telegram
-TELEGRAM_TOKEN = "7402831359:AAHwrtwwqOhxsP4iajcx9-zGXev_DGDMlPY"
-CHAT_ID = "1963161645"
-bot = Bot(token=TELEGRAM_TOKEN)
+# Fonctions pour gérer les commandes
+def start(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text("Signal Bot service started!")
 
-# Liste des cryptomonnaies à surveiller
-CRYPTO_LIST = ["BTC-USD", "ETH-USD", "ADA-USD"]  # Utiliser les tickers de yfinance
+def stop(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text("Signal Bot service stopped!")
 
-# Fichier de suivi des performances
-PERFORMANCE_LOG = "trading_performance.csv"
+def balance(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text("Your current trading account balance is $1000.")
 
-# Fonction pour récupérer les données historiques avec yfinance
-def fetch_crypto_data(crypto_id, period="1y"):
-    data = yf.download(crypto_id, period=period)
-    return data['Close'].values
+def settings(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text("Configure your Signal Bot using this command.")
 
-# Fonction pour entraîner un modèle de machine learning (à améliorer)
-def train_ml_model(data, target):
-    # Division des données en ensemble d'entraînement et de test
-    X_train, X_test, y_train, y_test = train_test_split(data, target, test_size=0.2, random_state=42)
+def my_settings(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text("Your current settings are displayed here.")
 
-    # Modèle de régression logistique (à remplacer par un modèle plus complexe si nécessaire)
-    model = LogisticRegression()
-    model.fit(X_train, y_train)
+def amount(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text("Set the trade amount using this command.")
 
-    return model
+def accuracy(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text("Set the minimum signal accuracy using this command.")
 
-# Fonction pour calculer les indicateurs techniques
-def calculate_indicators(prices):
-    # Calculer des indicateurs plus complets (SMA, EMA, RSI, MACD, Bollinger Bands, etc.)
-    # ...
+def payout(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text("Set the minimum payout using this command.")
 
-    # Exemple simple :
-    sma_short = prices[-10:].mean()
-    sma_long = prices[-20:].mean()
-    # ... d'autres indicateurs
+def expiration(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text("Set the expiration time using this command.")
 
-    return sma_short, sma_long, ...
+def deposit(update: Update, context: CallbackContext) -> None:
+    try:
+        value = context.args[0]
+        update.message.reply_text(f"Deposit of ${value} made successfully!")
+    except IndexError:
+        update.message.reply_text("Please specify the deposit amount. Example: /deposit 500")
 
-# Fonction pour analyser les signaux avec le modèle ML
-def analyze_signals(prices, model):
-    # Calculer les indicateurs
-    indicators = calculate_indicators(prices)
+def set_amount(update: Update, context: CallbackContext) -> None:
+    try:
+        value = context.args[0]
+        update.message.reply_text(f"Trade amount set to ${value}.")
+    except IndexError:
+        update.message.reply_text("Please specify the trade amount. Example: /amount 100")
 
-    # Préparer les données pour le modèle
-    features = np.array(indicators).reshape(1, -1)
-    prediction = model.predict(features)
+def set_accuracy(update: Update, context: CallbackContext) -> None:
+    try:
+        value = context.args[0]
+        update.message.reply_text(f"Minimum signal accuracy set to {value}%.")
+    except IndexError:
+        update.message.reply_text("Please specify the accuracy. Example: /accuracy 90")
 
-    # Signal basé sur le modèle ML
-    buy_signal = prediction[0] == 1
+def set_payout(update: Update, context: CallbackContext) -> None:
+    try:
+        value = context.args[0]
+        update.message.reply_text(f"Minimum payout set to {value}%.")
+    except IndexError:
+        update.message.reply_text("Please specify the payout. Example: /payout 75")
 
-    # Calculer stop-loss et take-profit dynamiques (basés sur des indicateurs techniques)
-    # ...
+def limit(update: Update, context: CallbackContext) -> None:
+    try:
+        value = context.args[0]
+        update.message.reply_text(f"Balance limit set to ${value}.")
+    except IndexError:
+        update.message.reply_text("Please specify the balance limit. Example: /limit 1000")
 
-    return buy_signal, stop_loss, take_profit
+# Configuration du bot
+def main() -> None:
+    # Token du bot
+    updater = Updater("7402831359:AAHwrtwwqOhxsP4iajcx9-zGXev_DGDMlPY")
 
-# Fonction principale pour analyser une crypto
-def analyze_crypto(crypto, model):
-    prices = fetch_crypto_data(crypto)
-    if prices is not None:
-        buy_signal, stop_loss, take_profit = analyze_signals(prices, model)
-        # ... (même logique que précédemment)
+    # Dispatcher pour enregistrer les commandes
+    dispatcher = updater.dispatcher
 
-# Fonction principale
-def main():
-    # Charger des données historiques pour l'entraînement (à remplacer par vos propres données)
-    data = fetch_crypto_data("BTC-USD", "5y")
-    # Créer des features (indicateurs techniques)
-    features = calculate_indicators(data)
-    # Créer des targets (signaux d'achat/vente basés sur une stratégie manuelle ou un autre modèle)
-    targets = ...
+    # Ajouter les gestionnaires de commandes
+    dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(CommandHandler("stop", stop))
+    dispatcher.add_handler(CommandHandler("balance", balance))
+    dispatcher.add_handler(CommandHandler("settings", settings))
+    dispatcher.add_handler(CommandHandler("my_settings", my_settings))
+    dispatcher.add_handler(CommandHandler("amount", amount))
+    dispatcher.add_handler(CommandHandler("accuracy", accuracy))
+    dispatcher.add_handler(CommandHandler("payout", payout))
+    dispatcher.add_handler(CommandHandler("expiration", expiration))
+    dispatcher.add_handler(CommandHandler("deposit", deposit))
+    dispatcher.add_handler(CommandHandler("amount", set_amount))
+    dispatcher.add_handler(CommandHandler("accuracy", set_accuracy))
+    dispatcher.add_handler(CommandHandler("payout", set_payout))
+    dispatcher.add_handler(CommandHandler("limit", limit))
 
-    # Entraîner le modèle
-    model = train_ml_model(features, targets)
-
-    while True:
-        with ThreadPoolExecutor() as executor:
-            executor.map(lambda crypto: analyze_crypto(crypto, model), CRYPTO_LIST)
-        time.sleep(300)
+    # Démarrer le bot
+    updater.start_polling()
+    updater.idle()
 
 if __name__ == "__main__":
     main()
